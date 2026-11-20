@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Métricas y Dashboard - Casa de Reposo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+  <!-- Navbar Superior -->
+  <nav class="bg-teal-700 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📊</span>
+        <span class="font-bold tracking-tight">Dashboard de Atenciones</span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="registro.html" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-lg transition">📝 Registro</a>
+        <a href="admin.html" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-lg transition">⚙️ Admin</a>
+        <button onclick="cerrarSesion()" class="text-teal-200 hover:text-white ml-1">Salir</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto p-4 mt-3 space-y-6">
+
+    <!-- Filtros -->
+    <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-teal-700">Filtros de Consulta</h2>
+        <div class="flex gap-2">
+          <button type="button" id="btn-limpiar-filtros"
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition">
+            Limpiar filtros
+          </button>
+          <button type="button" id="btn-exportar-csv"
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition">
+            📥 Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Desde</label>
+          <input type="date" id="filtro-desde"
+            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Hasta</label>
+          <input type="date" id="filtro-hasta"
+            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Servicio / Sala</label>
+          <select id="filtro-servicio"
+            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <option value="">Todos los servicios</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Personal</label>
+          <select id="filtro-personal"
+            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <option value="">Todo el personal</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Residente</label>
+          <select id="filtro-residente"
+            class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <option value="">Todos los residentes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Atenciones</p>
+        <p id="kpi-total" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Servicio Más Visitado</p>
+        <p id="kpi-servicio-top" class="text-xl font-bold text-teal-700 mt-2 truncate">-</p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Residente Más Activo</p>
+        <p id="kpi-residente-top" class="text-xl font-bold text-indigo-700 mt-2 truncate">-</p>
+      </div>
+    </section>
+
+    <!-- Gráficos -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Atenciones por Servicio</h3>
+        <div class="h-64">
+          <canvas id="chart-servicios"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Top Residentes con Más Visitas</h3>
+        <div class="h-64">
+          <canvas id="chart-residentes"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla Detallada -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex 
+      items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-700">Detalle de Registros Filtrados</h3>
+        <span id="contador-filas" class="text-xs text-slate-400">0 registros</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+            <tr>
+              <th class="p-3">Fecha y Hora</th>
+              <th class="p-3">Residente</th>
+              <th class="p-3">Servicio</th>
+              <th class="p-3">Atendió</th>
+              <th class="p-3">Observación</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-atenciones" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

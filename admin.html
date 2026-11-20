@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administración - Casa de Reposo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+  <!-- Navbar Superior -->
+  <nav class="bg-teal-700 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⚙️</span>
+        <span class="font-bold tracking-tight">Panel de Administración</span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="registro.html" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-lg transition">📝 Registro</a>
+        <a href="dashboard.html" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-lg transition">📊 Métricas</a>
+        <button onclick="cerrarSesion()" class="text-teal-200 hover:text-white ml-1">Salir</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto p-4 mt-3 space-y-6">
+
+    <!-- Pestañas -->
+    <div class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+      <button data-tab="residentes" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-sm bg-teal-600 text-white transition">
+        👴 Residentes y QR
+      </button>
+      <button data-tab="servicios" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition">
+        🧩 Servicios / Salas
+      </button>
+      <button data-tab="personal" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-100 transition">
+        🧑‍⚕️ Personal
+      </button>
+    </div>
+
+    <!-- TAB 1: RESIDENTES -->
+    <section id="tab-residentes" class="tab-panel space-y-5">
+      <form id="form-residente" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <input type="text" id="res-codigo" required placeholder="Código QR (ej. RES-005)"
+          class="p-3 border border-slate-300 rounded-xl text-sm uppercase outline-none focus:ring-2 focus:ring-teal-500" />
+        <input type="text" id="res-nombres" required placeholder="Nombres"
+          class="p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <input type="text" id="res-apellidos" required placeholder="Apellidos"
+          class="p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <div class="flex gap-2">
+          <input type="text" id="res-habitacion" placeholder="Hab. (ej. 105)"
+            class="w-1/2 p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+          <button type="submit" class="w-1/2 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-sm transition">
+            + Agregar
+          </button>
+        </div>
+      </form>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+            <tr>
+              <th class="p-3">Código</th>
+              <th class="p-3">Residente</th>
+              <th class="p-3">Habitación</th>
+              <th class="p-3">Estado</th>
+              <th class="p-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-residentes" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: SERVICIOS -->
+    <section id="tab-servicios" class="tab-panel hidden space-y-5">
+      <form id="form-servicio" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <input type="text" id="srv-nombre" required placeholder="Nombre (ej. Gimnasio / Lectura)"
+          class="md:col-span-2 p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <input type="text" id="srv-icono" value="✨" placeholder="Emoji (ej. ✂️)"
+          class="p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-sm p-3 transition">
+          + Agregar Servicio
+        </button>
+      </form>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+            <tr>
+              <th class="p-3">Servicio</th>
+              <th class="p-3">Estado</th>
+              <th class="p-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-servicios" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: PERSONAL -->
+    <section id="tab-personal" class="tab-panel hidden space-y-5">
+      <form id="form-personal" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input type="text" id="per-nombres" required placeholder="Nombre completo del encargado"
+          class="p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <input type="text" id="per-cargo" placeholder="Cargo (ej. Terapista, Estilista)"
+          class="p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-sm p-3 transition">
+          + Agregar Personal
+        </button>
+      </form>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+            <tr>
+              <th class="p-3">Nombre</th>
+              <th class="p-3">Cargo</th>
+              <th class="p-3">Estado</th>
+              <th class="p-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-personal" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL CARNET QR -->
+  <div id="modal-qr" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl text-center space-y-4">
+      <p class="text-xs font-bold uppercase tracking-wider text-teal-700">Carnet de Residente</p>
+      <h3 id="qr-nombre" class="text-lg font-bold text-slate-800"></h3>
+      <p id="qr-codigo-texto" class="text-xs font-mono bg-slate-100 inline-block px-3 py-1 rounded text-slate-600"></p>
+      <div id="qr-canvas" class="flex justify-center py-2"></div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="window.print()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl">
+          🖨️ Imprimir
+        </button>
+        <button id="btn-cerrar-qr" class="flex-1 py-2.5 border border-slate-300 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-100">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
